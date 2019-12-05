@@ -1,8 +1,11 @@
 import random
 import csv
+import numpy as np
+
+BOARD_SIZE = 3
 
 class Player:
-
+   
     
     def __init__(self, token):
         self.steps_taken = []
@@ -10,6 +13,7 @@ class Player:
         self.state_value = {}
         self.lr = 0.2
         self.decay_gamma = 0.9
+        
         #self.initialize_state_value()
         
     def initialize_state_value(self):
@@ -24,64 +28,50 @@ class Player:
     def reset(self):
         self.steps_taken = []
     
-    def play_turn(self, actions):
+    def getHash(self, board):
+        boardHash = str(board.reshape(BOARD_SIZE * BOARD_SIZE))
+        return boardHash
+    
+    def playTurn(self, positions, current_board):
         chosen_action = 0
         # 1/10 times player chooses a random action
         if random.random() > self.decay_gamma:
-            chosen_action = random.choice(actions)  
+            idx = np.random.choice(len(positions))
+            chosen_action = positions[idx]
         else:
             # Let's find action that has the biggest value
             max_gain = 0
-            for i in actions:             
-                next_state = self.steps_taken.copy()
-                next_state.append(i)
-                if next_state == None:
-                    print("Next state on none")
+            for i in positions:             
+                next_state = current_board.copy()
+                next_state[i] = self.token
+                next_boardHash = self.getHash(next_state)
                 # If state with given action is None initialize with 0
-                if self.state_value.get(repr(next_state)) == None:
+                if self.state_value.get(next_boardHash) == None:
                     pass
                 else:
                     # Else let's check if it's larger that the maximim value 
                     # we have found so far
-                    if self.state_value.get(repr(next_state)) > max_gain:
-                        max_gain = self.state_value[repr(next_state)]
+                    if self.state_value.get(next_boardHash) >= max_gain:
+                        max_gain = self.state_value[next_boardHash]
                         chosen_action = i
             if max_gain == 0:
-               chosen_action = random.choice(actions)      
-               
-        self.steps_taken.append(chosen_action)      
+               idx = np.random.choice(len(positions))
+               chosen_action = positions[idx]    
+
         return chosen_action
-       
-    def steps_taken(self):
-        return self.steps_taken
+    
+    def addStep(self, step):
+        self.steps_taken.append(step)
     
     def token(self):
         return self.token
     
-    def update_state_values(self, reward, state):
-        # If player has one with 3 steps, reward is higher
-        if len(self.steps_taken) == 3 and reward == 10:
-           reward = reward*3
-        state_iter = len(state) -1
-        i = len(self.steps_taken) - 1
-        while state_iter > -1 and i > -1:
-            # Only add reward to those steps that current player has taken
-            if self.steps_taken[i] == state[state_iter]:
-                if state_iter == 0:
-                    current = repr([state[0]])
-                else:
-                    current = repr(state[:(state_iter+1)])
-                if current == None:
-                    print("Current on none")
-                if self.state_value.get(current) is None:
-                    self.state_value[current] = 0
-                self.state_value[current] += self.lr * \
-                                     (self.decay_gamma * reward - \
-                                      self.state_value[current])
-                reward = self.state_value[current]
-                i = i - 1
-            
-            state_iter = state_iter - 1
+    def updateStateValues(self, reward):
+        for st in reversed(self.steps_taken):
+            if self.state_value.get(st) is None:
+                self.state_value[st] = 0
+            self.state_value[st] += self.lr * (self.decay_gamma * reward - self.state_value[st])
+            reward = self.state_value[st]
     
     
     def save(self):

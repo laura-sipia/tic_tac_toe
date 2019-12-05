@@ -5,21 +5,17 @@ Created on Sun Dec  1 11:54:17 2019
 @author: laura
 """
 
-import time
-import random
+import numpy as np
 from player import Player
+from humanplayer import HumanPlayer
 
-ACTIONS = [0,1,2,3,4,5,6,7,8]
-
-state = []
-board = [[' ', ' ', ' '],
-         [' ', ' ', ' '],
-         [' ', ' ', ' ']]
+BOARD_SIZE = 3
+board = np.zeros((BOARD_SIZE,BOARD_SIZE))
+boardHash = None
 
 # If board has tics in all row of a column, all columns in a row or in either
 # diagonal
-def game_has_ended():
-    global state
+def gameHasEnded():
     global board
     tie = 2
     win = 1
@@ -46,63 +42,75 @@ def game_has_ended():
         
     # If some row has only one kind on decorators
     for row in board:
-        if check_row(row, "X") or check_row(row, "O"):
+        if check_row(row, 1) or check_row(row, -1):
             return win
         
     # If some column has only one kind on decorators
     for i in range(3):
-        if check_column(i, "X") or check_column(i, "O"):
+        if check_column(i, 1) or check_column(i, -1):
             return win
         
     # If right to left diagonal has only one kind of decorators
-    if check_diagonal("X") or check_diagonal("O"):
+    if check_diagonal(1) or check_diagonal(-1):
         return win
         
     # If left to right diagonal has only one kind of decorators
-    if check_right_left_diagonal("X") or check_right_left_diagonal("O"):
+    if check_right_left_diagonal(1) or check_right_left_diagonal(-1):
         return win
     
-    if len(state) == 9:
-        return tie
+    for place in board:
+        if any(i == 0 for i in place):
+            return game_ongoing
     
-    return game_ongoing
-        
+    return tie
+     
+def getBoardHash():
+    global boardHash
+    global board
+    boardHash = str(board.reshape(BOARD_SIZE*BOARD_SIZE))
+    return boardHash
 
 # All actions that are not currently used are allowed
-def allowed_steps():
-    global state
-    allowed_actions = []
-    for action in ACTIONS:
-        if action not in state:
-            allowed_actions.append(action)
-    return allowed_actions
+def allowedSteps():
+    allowed_positions = []
+    for i in range(BOARD_SIZE):
+        for j in range(BOARD_SIZE):
+            if board[i,j] == 0:
+                allowed_positions.append((i,j))
+    return allowed_positions
 
 # Updates the board view
-def update_board(action, decorator):
+def updateBoard(position, decorator):
     global board
-    if action < 3:
-        # First row
-        board[0][action] = decorator
-    elif action < 6:
-        # Second row
-        board[1][action-3] = decorator
-    else:
-        # Third row
-        board[2][action-6] = decorator
+    board[position] = decorator
+
+def show_board():
+    global board
+    for i in range(0, BOARD_SIZE):
+        print('----------------')
+        out = '|'
+        for j in range(0,BOARD_SIZE):
+            if board[i,j] == 1:
+                token = 'x'
+            if board[i,j] == -1:
+                token = 'o'
+            if board[i,j] == 0:
+                token = ' '
+            out += token + '|'
+        print (out)
+    print('-----------------')
 
 def train(epochs):
-    global state
     global board
-    player1 = Player('X')
-    player2 = Player('O') 
+    global boardHash
+    player1 = Player(-1)
+    player2 = Player(1) 
     for i in range(epochs):
         
         player1.reset()
         player2.reset()
-        state = []
-        board = [[' ', ' ', ' '],
-         [' ', ' ', ' '],
-         [' ', ' ', ' ']]
+        boardHash = None
+        board = np.zeros((BOARD_SIZE,BOARD_SIZE))
         
         # Randomly choose beginner
         turn = 1
@@ -113,55 +121,121 @@ def train(epochs):
             # Game has not ended, other players turn
             turn = turn + 1
             # What are the available actions curretly
-            actions = allowed_steps()
+            positions = allowedSteps()
             # Player takes an action
             if turn % 2 == 0:
-                action = player2.play_turn(actions)
-                # Update the board state
-                state.append(action)
+                action = player2.playTurn(positions, board)
+                boardHash = getBoardHash()
                 # Update the board
-                update_board(action, player2.token)
+                updateBoard(action, player2.token)
+                player2.addStep(boardHash)
             else:
-                action = player1.play_turn(actions)    
-                # Update the board state
-                state.append(action)
+                action = player1.playTurn(positions, board)    
+                boardHash = getBoardHash()
                 # Update the board
-                update_board(action, player1.token)       
+                updateBoard(action, player1.token)    
+                player1.addStep(boardHash)
             
-            if  i > 999990:
+            if  i > 49990:
                 # Show the current situation
-                for row in board:
-                    print(row)
+                show_board()
                 print(" ")
                            
                 
                 #time.sleep(1)
                        
-            GAME_STATUS = game_has_ended()
+            GAME_STATUS = gameHasEnded()
             
         if GAME_STATUS == 1:
             # Who won
             if turn % 2 == 0:
-                player2.update_state_values(10, state)
-                player1.update_state_values(-5, state)
+                player2.updateStateValues(1)
+                player1.updateStateValues(0)
             else:
-                player1.update_state_values(10, state)
-                player2.update_state_values(-5, state)
+                player1.updateStateValues(1)
+                player2.updateStateValues(0)
             print("GAME ENDED TO WIN")
             print("  ")
             
-        #elif GAME_STATUS == 2:
-         #   player1.update_state_values(5, state)
-         #   player2.update_state_values(5, state)
-          #  print("GAME ENDED TO TIE")
-           # print("  ")
+        elif GAME_STATUS == 2:
+            player1.updateStateValues(0.1)
+            player2.updateStateValues(0.5)
+            print("GAME ENDED TO TIE")
+            print("  ")
     player1.save()
     player2.save()
     
-
-train(1000000)
-            
+def doYouWantToPlay():
+    while True:
+        response = str(input("Do you want to play:"))
+        if response == 'y':
+            return True
+        elif response == 'n':
+            return False
     
+
+def trainWithHuman():
+    global board
+    global boardHash
+    PLAY = True
+    player1 = Player(-1)
+    player2 = HumanPlayer(1) 
+    while PLAY:
+        
+        player1.reset()
+        boardHash = None
+        board = np.zeros((BOARD_SIZE,BOARD_SIZE))
+        
+        turn = 1
+        GAME_STATUS = 0
+        
+        # While game has not ended
+        while GAME_STATUS == 0:
+            # Game has not ended, other players turn
+            turn = turn + 1
+            # What are the available actions curretly
+            positions = allowedSteps()
+            # Player takes an action
+            if turn % 2 == 0:
+                action = player2.playTurn(positions)
+                boardHash = getBoardHash()
+                # Update the board
+                updateBoard(action, player2.token)
+                player2.addStep(boardHash)
+            else:
+                action = player1.playTurn(positions, board)    
+                boardHash = getBoardHash()
+                # Update the board
+                updateBoard(action, player1.token)    
+                player1.addStep(boardHash)
+            
+            show_board()
+            print(" ")
+                       
+            GAME_STATUS = gameHasEnded()
+            
+        if GAME_STATUS == 1:
+            # Who won
+            if turn % 2 == 0:
+                player2.updateStateValues(1)
+                player1.updateStateValues(0)
+            else:
+                player1.updateStateValues(1)
+                player2.updateStateValues(0)
+            print("GAME ENDED TO WIN")
+            print("  ")
+            
+        elif GAME_STATUS == 2:
+            player1.updateStateValues(0.1)
+            player2.updateStateValues(0.5)
+            print("GAME ENDED TO TIE")
+            print("  ")
+        PLAY = doYouWantToPlay()
+    player1.save()
+
+#train(50000)
+           
+trainWithHuman()
     
     
     
