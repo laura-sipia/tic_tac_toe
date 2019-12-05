@@ -105,7 +105,7 @@ def train(epochs):
          [' ', ' ', ' ']]
         
         # Randomly choose beginner
-        turn = random.choice([1,2])
+        turn = 1
         GAME_STATUS = 0
         
         # While game has not ended
@@ -128,37 +128,38 @@ def train(epochs):
                 # Update the board
                 update_board(action, player1.token)       
             
-            # Show the current situation
-            for row in board:
-                print(row)
-            print(" ")
-                       
-            if  i > 9990:
-                time.sleep(1)
+            if  i > 999990:
+                # Show the current situation
+                for row in board:
+                    print(row)
+                print(" ")
+                           
+                
+                #time.sleep(1)
                        
             GAME_STATUS = game_has_ended()
             
         if GAME_STATUS == 1:
             # Who won
             if turn % 2 == 0:
-                player2.update_state_values(10)
-                player1.update_state_values(-10)
+                player2.update_state_values(10, state)
+                player1.update_state_values(-5, state)
             else:
-                player1.update_state_values(10)
-                player2.update_state_values(-10)
+                player1.update_state_values(10, state)
+                player2.update_state_values(-5, state)
             print("GAME ENDED TO WIN")
             print("  ")
             
-        elif GAME_STATUS == 2:
-            player1.update_state_values(1)
-            player2.update_state_values(1)
-            print("GAME ENDED TO TIE")
-            print("  ")
+        #elif GAME_STATUS == 2:
+         #   player1.update_state_values(5, state)
+         #   player2.update_state_values(5, state)
+          #  print("GAME ENDED TO TIE")
+           # print("  ")
     player1.save()
     player2.save()
     
 
-train(10000)
+train(1000000)
             
     
     
