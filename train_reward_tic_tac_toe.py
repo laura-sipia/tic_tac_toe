@@ -186,7 +186,7 @@ def trainWithHuman():
         boardHash = None
         board = np.zeros((BOARD_SIZE,BOARD_SIZE))
         
-        turn = 1
+        turn = 2
         GAME_STATUS = 0
         
         # While game has not ended
@@ -226,8 +226,8 @@ def trainWithHuman():
             print("  ")
             
         elif GAME_STATUS == 2:
-            player1.updateStateValues(0.1)
-            player2.updateStateValues(0.5)
+            player1.updateStateValues(0.5)
+            player2.updateStateValues(0.1)
             print("GAME ENDED TO TIE")
             print("  ")
         PLAY = doYouWantToPlay()

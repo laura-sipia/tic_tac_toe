@@ -14,10 +14,10 @@ class Player:
         self.lr = 0.2
         self.decay_gamma = 0.9
         
-        #self.initialize_state_value()
+        self.initialize_state_value()
         
     def initialize_state_value(self):
-        file = 'player_O.csv'
+        file = 'player_-1.csv'
         with open(file) as fp:
            for cnt, line in enumerate(fp):
                if len(line) != 1:

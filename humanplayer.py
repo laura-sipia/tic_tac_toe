@@ -10,13 +10,15 @@ class HumanPlayer:
         return
     
     def playTurn(self, positions):
-        while True:
-            row = int(input("Input your action row:"))
-            col = int(input("Input your action col:"))
-            action = (row, col)
-            if action in positions:
-                return action
-
+        try:
+            while True:
+                row = int(input("Input your action row:"))
+                col = int(input("Input your action col:"))
+                action = (row, col)
+                if action in positions:
+                    return action
+        except ValueError:
+            self.playTurn(positions)
     def addStep(self, state):
         pass
 
