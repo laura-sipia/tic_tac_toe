@@ -86,9 +86,10 @@ def updateBoard(position, decorator):
 
 def show_board():
     global board
+    print(" |0|1|2|")
     for i in range(0, BOARD_SIZE):
         print('----------------')
-        out = '|'
+        out = str(i) + '|'
         for j in range(0,BOARD_SIZE):
             if board[i,j] == 1:
                 token = 'x'
