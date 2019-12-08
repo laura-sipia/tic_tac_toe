@@ -1,1 +1,5 @@
-# tic_tac_toe
+# Tic-Tac-Toe
+
+!! WIP !!
+
+Reinforcement learning project.
